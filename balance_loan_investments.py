@@ -12,13 +12,13 @@ import matplotlib.pyplot as plt
 from matplotlib import cm
 
 user_variables = {
-  "loan_amount": 7500000,
-  "loan_interest_rate": 9.55,
+  "loan_amount": 800000,
+  "loan_interest_rate": 8,
   "savings_monthly": 100000,
   "investment_returns": 8,
   "investment_returns_tax_rate": 10,
   "investment_time_interval": 10,
-  "initial_month": 0,
+  "initial_month": 10,
 }
 
 calendar_month_dict = {"Jan":0, "Feb":1, "Mar":2, "Apr":3, "May":4, "Jun":5,
@@ -88,7 +88,7 @@ def get_investment_statement(principal, sip_amount, returns_rate):
   returns = (principal * returns_rate)/(100 * 12)
   investment_statement["returns"] = returns
   investment_statement["sip_amount"] = sip_amount
-  investment_statement["new_principal"] = principal + sip_amount
+  investment_statement["new_principal"] = principal + sip_amount + returns
   return investment_statement
 
 # Tax rebate on home loan
@@ -99,7 +99,9 @@ def get_prev_year_tax_rebate(loan_sheet, abs_cal_offset):
     if abs_cal_offset - statement["abs_cal_offset"] > len(calendar_month_dict):
       break
     prev_year_loan_interest += statement["monthly_interest"]
-  return prev_year_loan_interest
+
+  tax_rebate = (max(200000, prev_year_loan_interest)*0.3)
+  return tax_rebate
 
 def spend_monthly_savings(loan_sheet, investment_sheet, emi, user_variables,
   calendar_offset):
@@ -111,7 +113,9 @@ def spend_monthly_savings(loan_sheet, investment_sheet, emi, user_variables,
   # Sum up interest for the last financial year and calculate the tax savings.
   # we'll adjust those tax savings to the principal investment.
   if abs_cal_offset % len(calendar_month_dict) == calendar_month_dict["Apr"]:
-    get_prev_year_tax_rebate(loan_sheet, abs_cal_offset)
+    tax_rebate = get_prev_year_tax_rebate(loan_sheet,
+      abs_cal_offset)
+    investment_sheet[-1]["new_principal"] += tax_rebate
 
   sip_amount = savings
   outstanding_loan = loan_sheet[-1]["outstanding_loan"]
@@ -222,6 +226,7 @@ def main():
   print("RETURNS CHART:", overall_returns_chart)
   # create dataframe
   df = pd.DataFrame(overall_returns_chart)
+  print(df.to_string())
 
   fig = plt.figure(figsize=(10,8))
   ax = fig.add_subplot(111, projection='3d')
